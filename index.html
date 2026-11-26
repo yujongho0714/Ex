@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>APK & 게임 에셋 분석·정제기 v3 (오프라인 내장엔진)</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --primary: #38bdf8;
+    --accent: #a855f7;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .badge-pro {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff;
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  .upload-box {
+    border: 2px dashed var(--primary);
+    background: var(--card);
+    border-radius: 14px;
+    padding: 24px 16px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .file-label-btn {
+    display: inline-block;
+    background: var(--primary);
+    color: #0f172a;
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
+  }
+  .file-label-btn:active { transform: scale(0.98); }
+  .upload-box p { color: var(--muted); font-size: 0.82rem; margin-top: 8px; }
+
+  .btn {
+    background: var(--primary);
+    color: #0f172a;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary { background: var(--border); color: var(--text); }
+  .btn-success { background: var(--success); color: #052e16; }
+
+  /* 실시간 진행률 패널 */
+  .progress-panel {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: 700;
+    font-size: 0.92rem;
+  }
+  .progress-percent {
+    color: var(--primary);
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-track {
+    width: 100%;
+    height: 12px;
+    background: var(--bg);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    transition: width 0.1s linear;
+  }
+  .progress-detail {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .progress-log {
+    margin-top: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.74rem;
+    font-family: monospace;
+    color: #cbd5e1;
+    max-height: 100px;
+    overflow-y: auto;
+    line-height: 1.45;
+  }
+
+  /* 요약 대시보드 */
+  .summary-panel {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .stat-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+  }
+  .stat-label { font-size: 0.72rem; color: var(--muted); }
+  .stat-value { font-size: 0.98rem; font-weight: 700; color: var(--primary); margin-top: 2px; word-break: break-all; }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    background: var(--bg);
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .toolbar input[type="text"], .toolbar select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 0.84rem;
+  }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+  }
+  .tab {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: var(--primary);
+    color: #0f172a;
+    border-color: var(--primary);
+  }
+
+  .asset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .asset-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .preview-box {
+    height: 120px;
+    background-image:
+      linear-gradient(45deg, #1e293b 25%, transparent 25%),
+      linear-gradient(-45deg, #1e293b 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #1e293b 75%),
+      linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-color: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 8px;
+  }
+  .preview-box img {
+    max-width: 100%;
+    max-height: 100%;
+    image-rendering: pixelated;
+    object-fit: contain;
+  }
+  .tag-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid var(--border);
+    font-size: 0.66rem;
+    padding: 2px 6px;
+    border-radius: 5px;
+    color: #e2e8f0;
+  }
+  .asset-info {
+    padding: 9px;
+    font-size: 0.76rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 5px;
+  }
+  .orig-name {
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.7rem;
+  }
+  .clean-name {
+    color: var(--primary);
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .meta-line {
+    display: flex;
+    justify-content: space-between;
+    color: #cbd5e1;
+    font-size: 0.7rem;
+  }
+  .structure-tree {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-family: monospace;
+    font-size: 0.78rem;
+    max-height: 450px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    color: #cbd5e1;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📦 APK & 게임 에셋 분석·정제기 <span class="badge-pro">오프라인 내장엔진</span></h1>
+  <button class="btn btn-secondary" onclick="resetAll()">초기화</button>
+</header>
+
+<div class="upload-box">
+  <div style="font-size: 1.8rem;">📱 / 🗂️</div>
+  <label for="fileInput" class="file-label-btn">📂 APK / ZIP / 이미지 파일 선택하기</label>
+  <input type="file" id="fileInput" multiple style="display:none;">
+  <p>인터넷 연결 없이 기기 내부에서 즉시 APK 압축을 해부하고 리소스를 추출합니다.</p>
+</div>
+
+<!-- 실시간 진행 상태 패널 -->
+<div class="progress-panel" id="progressPanel">
+  <div class="progress-header">
+    <span id="progressStage">⏳ 준비 중...</span>
+    <span class="progress-percent" id="progressPercent">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+  <div class="progress-detail" id="progressCurrentFile">대기 중...</div>
+  <div class="progress-log" id="progressLog"></div>
+</div>
+
+<div class="summary-panel" id="summaryPanel">
+  <div class="summary-grid">
+    <div class="stat-box">
+      <div class="stat-label">대상 파일명</div>
+      <div class="stat-value" id="statFileName">-</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">감지된 엔진 / 구조</div>
+      <div class="stat-value" id="statEngine">-</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">추출된 이미지 / 사운드</div>
+      <div class="stat-value" id="statCounts">0 / 0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">총 리소스 용량</div>
+      <div class="stat-value" id="statSize">0 MB</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <label style="font-size:0.8rem; color:var(--muted);">접두사:</label>
+    <input type="text" id="prefixInput" value="asset" style="width:110px;" oninput="applyCleanNames()">
+    <select id="filterBg" onchange="renderAssets()">
+      <option value="all">전체 이미지</option>
+      <option value="sheet">스프라이트 시트 의심</option>
+      <option value="solid">단색 배경 (#000 / #F0F)</option>
+      <option value="alpha">투명 배경 (Alpha)</option>
+    </select>
+    <button class="btn btn-success" id="downloadZipBtn" onclick="downloadCleanZip()">⬇️ 정제 에셋 일괄 ZIP 저장</button>
+    <button class="btn btn-secondary" onclick="exportManifestJson()">📄 분석 JSON</button>
+  </div>
+</div>
+
+<div class="tabs" id="tabBar" style="display:none;">
+  <button class="tab active" data-tab="images" onclick="switchTab('images')">🖼️ 이미지 (<span id="cntImg">0</span>)</button>
+  <button class="tab" data-tab="audio" onclick="switchTab('audio')">🔊 오디오 (<span id="cntAud">0</span>)</button>
+  <button class="tab" data-tab="data" onclick="switchTab('data')">📜 데이터 (<span id="cntDat">0</span>)</button>
+  <button class="tab" data-tab="tree" onclick="switchTab('tree')">📂 폴더 구조 분석</button>
+</div>
+
+<div class="asset-grid" id="assetGrid"></div>
+<div class="structure-tree" id="structureTree"></div>
+
+<script>
+  let parsedAssets = [];
+  let currentTab = 'images';
+  let sourceArchiveName = 'extracted_assets';
+
+  const fileInput = document.getElementById('fileInput');
+  fileInput.addEventListener('change', function(e) {
+    if (this.files && this.files.length > 0) {
+      handleFiles(this.files);
+    }
+  });
+
+  const tickUI = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+
+  function updateProgress(percent, stageText, detailText, logLine = null) {
+    const p = Math.min(100, Math.max(0, Math.round(percent)));
+    document.getElementById('progressPanel').style.display = 'block';
+    document.getElementById('progressPercent').textContent = `${p}%`;
+    document.getElementById('progressFill').style.width = `${p}%`;
+    if (stageText) document.getElementById('progressStage').textContent = stageText;
+    if (detailText) document.getElementById('progressCurrentFile').textContent = detailText;
+    if (logLine) {
+      const logBox = document.getElementById('progressLog');
+      logBox.innerHTML += `<div>• ${logLine}</div>`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+  }
+
+  function resetAll() {
+    parsedAssets.forEach(a => { if (a.url) URL.revokeObjectURL(a.url); });
+    parsedAssets = [];
+    document.getElementById('progressPanel').style.display = 'none';
+    document.getElementById('progressLog').innerHTML = '';
+    document.getElementById('summaryPanel').style.display = 'none';
+    document.getElementById('tabBar').style.display = 'none';
+    document.getElementById('assetGrid').innerHTML = '';
+    document.getElementById('structureTree').style.display = 'none';
+    fileInput.value = '';
+  }
+
+  // 순수 JS 내장 ZIP/APK 중앙 디렉토리 파서 (외부 라이브러리 불필요)
+  async function parseZipEntries(file) {
+    const size = file.size;
+    // 파일 끝에서 최대 65KB 읽어 EOCD(End of Central Directory) 찾기
+    const tailLen = Math.min(size, 65557);
+    const tailBuf = await file.slice(size - tailLen, size).arrayBuffer();
+    const tailView = new DataView(tailBuf);
+
+    let eocdOffset = -1;
+    for (let i = tailLen - 22; i >= 0; i--) {
+      if (tailView.getUint32(i, true) === 0x06054b50) {
+        eocdOffset = i;
+        break;
+      }
+    }
+    if (eocdOffset === -1) {
+      throw new Error('올바른 APK 또는 ZIP 압축 구조가 아닙니다.');
+    }
+
+    const totalEntries = tailView.getUint16(eocdOffset + 10, true);
+    const cdSize = tailView.getUint32(eocdOffset + 12, true);
+    const cdOffset = tailView.getUint32(eocdOffset + 16, true);
+
+    const cdBuf = await file.slice(cdOffset, cdOffset + cdSize).arrayBuffer();
+    const cdView = new DataView(cdBuf);
+    const decoder = new TextDecoder('utf-8');
+
+    const entries = [];
+    let ptr = 0;
+    while (ptr < cdSize && entries.length < totalEntries) {
+      if (cdView.getUint32(ptr, true) !== 0x02014b50) break;
+      const method = cdView.getUint16(ptr + 10, true);
+      const compSize = cdView.getUint32(ptr + 20, true);
+      const uncompSize = cdView.getUint32(ptr + 24, true);
+      const nameLen = cdView.getUint16(ptr + 28, true);
+      const extraLen = cdView.getUint16(ptr + 30, true);
+      const commentLen = cdView.getUint16(ptr + 32, true);
+      const localHeaderOffset = cdView.getUint32(ptr + 42, true);
+
+      const nameBytes = new Uint8Array(cdBuf, ptr + 46, nameLen);
+      const name = decoder.decode(nameBytes);
+
+      entries.push({
+        name,
+        method,
+        compSize,
+        uncompSize,
+        localHeaderOffset,
+        isDir: name.endsWith('/')
+      });
+      ptr += 46 + nameLen + extraLen + commentLen;
+    }
+    return entries;
+  }
+
+  // 개별 엔트리 압축 해제 (STORE=0, DEFLATE=8 지원)
+  async function extractEntryBlob(file, entry, mimeType) {
+    const headerBuf = await file.slice(entry.localHeaderOffset, entry.localHeaderOffset + 30).arrayBuffer();
+    const hView = new DataView(headerBuf);
+    const nameLen = hView.getUint16(26, true);
+    const extraLen = hView.getUint16(28, true);
+    const dataStart = entry.localHeaderOffset + 30 + nameLen + extraLen;
+    const compBlob = file.slice(dataStart, dataStart + entry.compSize);
+
+    if (entry.method === 0) {
+      return new Blob([compBlob], { type: mimeType });
+    } else if (entry.method === 8) {
+      if (typeof DecompressionStream === 'undefined') {
+        throw new Error('이 브라우저는 내장 압축 해제를 지원하지 않습니다. 최신 크롬을 사용해 주세요.');
+      }
+      const ds = new DecompressionStream('deflate-raw');
+      const decompressedStream = compBlob.stream().pipeThrough(ds);
+      const resp = new Response(decompressedStream);
+      const buf = await resp.arrayBuffer();
+      return new Blob([buf], { type: mimeType });
+    } else {
+      return null;
+    }
+  }
+
+  function getMimeType(ext) {
+    const map = {
+      png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+      webp: 'image/webp', gif: 'image/gif',
+      ogg: 'audio/ogg', mp3: 'audio/mpeg', wav: 'audio/wav',
+      json: 'application/json', xml: 'text/xml', txt: 'text/plain', atlas: 'text/plain'
+    };
+    return map[ext] || 'application/octet-stream';
+  }
+
+  async function handleFiles(fileList) {
+    resetAll();
+    const files = Array.from(fileList);
+    const first = files[0];
+    sourceArchiveName = first.name.replace(/\.[^/.]+$/, "");
+    const fileSizeMB = (first.size / (1024 * 1024)).toFixed(1);
+
+    updateProgress(5, '1/3 단계: 파일 인식 완료', `${first.name} (${fileSizeMB} MB)`, `선택된 파일: ${first.name} (${fileSizeMB} MB)`);
+    await tickUI();
+
+    let totalBytes = 0;
+    let allPaths = [];
+
+    try {
+      const isArchive = files.length === 1 && /\.(apk|xapk|zip|jar)$/i.test(first.name);
+
+      if (isArchive) {
+        updateProgress(15, '1/3 단계: APK/ZIP 목차(Central Directory) 스캔 중...', '전체 파일을 메모리에 올리지 않고 목차만 고속 스캔 중...', '내장 ZIP 파서로 목차 스캔 시작...');
+        await tickUI();
+
+        const entries = await parseZipEntries(first);
+        allPaths = entries.map(e => e.name);
+
+        updateProgress(25, '2/3 단계: 리소스 선별 완료', `전체 ${entries.length}개 항목 중 미디어/데이터 필터링`, `총 ${entries.length}개 내부 경로 확인 완료`);
+        await tickUI();
+
+        const targetEntries = entries.filter(e => {
+          if (e.isDir || e.compSize === 0) return false;
+          const ext = e.name.split('.').pop().toLowerCase();
+          return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'ogg', 'mp3', 'wav', 'json', 'xml', 'atlas', 'txt'].includes(ext);
+        });
+
+        updateProgress(30, '2/3 단계: 에셋 추출 및 해상도 분석 시작...', `추출 대상: ${targetEntries.length}개 파일`, `미디어/데이터 파일 ${targetEntries.length}개 선별됨`);
+        await tickUI();
+
+        const totalTargets = targetEntries.length || 1;
+        for (let i = 0; i < targetEntries.length; i++) {
+          const entry = targetEntries[i];
+          const ext = entry.name.split('.').pop().toLowerCase();
+          try {
+            const blob = await extractEntryBlob(first, entry, getMimeType(ext));
+            if (blob) {
+              totalBytes += blob.size;
+              await registerAsset(entry.name, blob, ext);
+            }
+          } catch (e) {
+            // 손상되거나 암호화된 개별 엔트리는 건너뜀
+          }
+
+          if (i % 10 === 0 || i === targetEntries.length - 1) {
+            const pct = 30 + ((i + 1) / totalTargets) * 62;
+            updateProgress(
+              pct,
+              `2/3 단계: 에셋 추출 중 (${i + 1} / ${targetEntries.length})`,
+              `추출 중: ${entry.name}`
+            );
+            await tickUI();
+          }
+        }
+      } else {
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          allPaths.push(f.name);
+          totalBytes += f.size;
+          const ext = f.name.split('.').pop().toLowerCase();
+          await registerAsset(f.name, f, ext);
+          updateProgress(20 + ((i + 1) / files.length) * 70, `개별 파일 분석 중 (${i + 1}/${files.length})`, f.name);
+          await tickUI();
+        }
+      }
+
+      updateProgress(95, '3/3 단계: 엔진 및 폴더 구조 분석 중...', '앱 메타데이터 정리 중...', '폴더 구조 및 게임 엔진 판별 완료');
+      await tickUI();
+
+      analyzePackageMeta(first.name, allPaths, totalBytes);
+      applyCleanNames();
+
+      updateProgress(100, '✅ 분석 완료!', `총 ${parsedAssets.length}개 에셋 추출 성공`, `완료: 이미지 ${parsedAssets.filter(a=>a.category==='images').length}개, 오디오 ${parsedAssets.filter(a=>a.category==='audio').length}개`);
+      document.getElementById('summaryPanel').style.display = 'block';
+      document.getElementById('tabBar').style.display = 'flex';
+      renderAssets();
+    } catch (err) {
+      updateProgress(0, '❌ 오류 발생', err.message, `에러: ${err.message}`);
+    }
+  }
+
+  async function registerAsset(fullPath, blob, ext) {
+    const origFileName = fullPath.split('/').pop();
+    const url = URL.createObjectURL(blob);
+    let category = 'data';
+    if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) category = 'images';
+    else if (['ogg', 'mp3', 'wav'].includes(ext)) category = 'audio';
+
+    const item = {
+      fullPath,
+      origName: origFileName,
+      cleanName: origFileName,
+      ext,
+      category,
+      size: blob.size,
+      blob,
+      url,
+      width: 0,
+      height: 0,
+      bgType: 'unknown',
+      isSheet: false
+    };
+
+    if (category === 'images') {
+      await inspectImage(item);
+    }
+    parsedAssets.push(item);
+  }
+
+  function inspectImage(item) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        item.width = img.naturalWidth;
+        item.height = img.naturalHeight;
+        if (item.width >= item.height * 2 && item.height >= 16) {
+          item.isSheet = true;
+        }
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 4;
+          canvas.height = 4;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, 4, 4);
+          const data = ctx.getImageData(0, 0, 1, 1).data;
+          const r = data[0], g = data[1], b = data[2], a = data[3];
+          if (a < 250) item.bgType = 'alpha';
+          else if (r < 10 && g < 10 && b < 10) item.bgType = 'solid';
+          else if (r > 245 && g < 10 && b > 245) item.bgType = 'solid';
+          else item.bgType = 'opaque';
+        } catch (e) {}
+        resolve();
+      };
+      img.onerror = () => resolve();
+      img.src = item.url;
+    });
+  }
+
+  function analyzePackageMeta(fileName, paths, totalBytes) {
+    document.getElementById('statFileName').textContent = fileName;
+    document.getElementById('statSize').textContent = (totalBytes / (1024 * 1024)).toFixed(2) + ' MB';
+
+    const joined = paths.join('\n').toLowerCase();
+    let engine = '일반 / 네이티브 앱';
+    if (joined.includes('libunity.so') || joined.includes('assets/bin/data')) engine = 'Unity Engine';
+    else if (joined.includes('libcocos')) engine = 'Cocos2d-x / Creator';
+    else if (joined.includes('libue4.so') || joined.includes('libunreal.so')) engine = 'Unreal Engine';
+    else if (joined.includes('assets/www/index.html') || joined.includes('cordova')) engine = 'HTML5 / WebView';
+    else if (joined.includes('libgodot')) engine = 'Godot Engine';
+
+    document.getElementById('statEngine').textContent = engine;
+
+    const imgCount = parsedAssets.filter(a => a.category === 'images').length;
+    const audCount = parsedAssets.filter(a => a.category === 'audio').length;
+    const datCount = parsedAssets.filter(a => a.category === 'data').length;
+
+    document.getElementById('statCounts').textContent = `${imgCount}개 / ${audCount}개`;
+    document.getElementById('cntImg').textContent = imgCount;
+    document.getElementById('cntAud').textContent = audCount;
+    document.getElementById('cntDat').textContent = datCount;
+
+    const dirMap = {};
+    paths.forEach(p => {
+      const parts = p.split('/');
+      const topDir = parts.length > 1 ? parts.slice(0, 2).join('/') : '(루트)';
+      dirMap[topDir] = (dirMap[topDir] || 0) + 1;
+    });
+    const treeLines = Object.entries(dirMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([dir, cnt]) => `📁 ${dir.padEnd(32, ' ')} : ${cnt}개`);
+    document.getElementById('structureTree').textContent =
+      `[전체 내부 경로 수: ${paths.length}개]\n` +
+      `[추정 엔진: ${engine}]\n` +
+      `--------------------------------------------\n` +
+      treeLines.join('\n');
+  }
+
+  function applyCleanNames() {
+    const rawPrefix = document.getElementById('prefixInput').value.trim();
+    const safePrefix = rawPrefix.replace(/[^a-zA-Z0-9_-]/g, '') || 'asset';
+    let counters = { images: 1, audio: 1, data: 1 };
+
+    parsedAssets.forEach(item => {
+      const num = String(counters[item.category]++).padStart(3, '0');
+      const suffix = item.isSheet ? '_sheet' : '';
+      item.cleanName = `${safePrefix}_${item.category === 'images' ? 'img' : item.category === 'audio' ? 'sfx' : 'dat'}_${num}${suffix}.${item.ext}`;
+    });
+    renderAssets();
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    renderAssets();
+  }
+
+  function renderAssets() {
+    const grid = document.getElementById('assetGrid');
+    const tree = document.getElementById('structureTree');
+
+    if (currentTab === 'tree') {
+      grid.style.display = 'none';
+      tree.style.display = 'block';
+      return;
+    }
+    grid.style.display = 'grid';
+    tree.style.display = 'none';
+
+    const bgFilter = document.getElementById('filterBg').value;
+    const filtered = parsedAssets.filter(item => {
+      if (item.category !== currentTab) return false;
+      if (currentTab === 'images') {
+        if (bgFilter === 'sheet' && !item.isSheet) return false;
+        if (bgFilter === 'solid' && item.bgType !== 'solid') return false;
+        if (bgFilter === 'alpha' && item.bgType !== 'alpha') return false;
+      }
+      return true;
+    });
+
+    grid.innerHTML = filtered.slice(0, 300).map(item => {
+      const kb = (item.size / 1024).toFixed(1) + ' KB';
+      let previewHtml = '';
+      if (item.category === 'images') {
+        const bgBadge = item.isSheet ? '시트추정' : (item.bgType === 'solid' ? '단색배경' : (item.bgType === 'alpha' ? '투명' : '일반'));
+        previewHtml = `
+          <div class="preview-box">
+            <img src="${item.url}" loading="lazy">
+            <span class="tag-badge">${bgBadge}</span>
+          </div>`;
+      } else if (item.category === 'audio') {
+        previewHtml = `
+          <div class="preview-box" style="flex-direction:column; gap:8px;">
+            <span style="font-size:1.8rem;">🎵</span>
+            <audio controls src="${item.url}" style="width:95%; height:28px;"></audio>
+          </div>`;
+      } else {
+        previewHtml = `
+          <div class="preview-box">
+            <span style="font-size:2rem;">📄</span>
+            <span class="tag-badge">${item.ext.toUpperCase()}</span>
+          </div>`;
+      }
+
+      return `
+        <div class="asset-card">
+          ${previewHtml}
+          <div class="asset-info">
+            <div class="orig-name" title="${item.fullPath}">원본: ${item.origName}</div>
+            <div class="clean-name" title="${item.cleanName}">정제: ${item.cleanName}</div>
+            <div class="meta-line">
+              <span>${item.category === 'images' ? `${item.width}×${item.height}` : item.ext.toUpperCase()}</span>
+              <span>${kb}</span>
+            </div>
+            <button class="btn btn-secondary" style="width:100%; justify-content:center; padding:5px; font-size:0.74rem;"
+              onclick="downloadSingle('${item.url}', '${item.cleanName}')">개별 저장</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function downloadSingle(url, filename) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+  }
+
+  // 외부 라이브러리 없이 STORE 방식 무압축 ZIP 직접 생성 (초고속·오프라인 100% 호환)
+  async function downloadCleanZip() {
+    if (!parsedAssets.length) return;
+    const btn = document.getElementById('downloadZipBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ ZIP 묶는 중...';
+
+    try {
+      const encoder = new TextEncoder();
+      const parts = [];
+      const cdRecords = [];
+      let offset = 0;
+
+      for (let i = 0; i < parsedAssets.length; i++) {
+        const item = parsedAssets[i];
+        const path = `${item.category}/${item.cleanName}`;
+        const nameBytes = encoder.encode(path);
+        const dataBuf = await item.blob.arrayBuffer();
+        const dataBytes = new Uint8Array(dataBuf);
+        const crc = crc32(dataBytes);
+
+        // Local File Header (30 bytes + name)
+        const lh = new ArrayBuffer(30);
+        const lhv = new DataView(lh);
+        lhv.setUint32(0, 0x04034b50, true);
+        lhv.setUint16(4, 20, true);
+        lhv.setUint16(6, 0x0800, true); // UTF-8
+        lhv.setUint16(8, 0, true);      // STORE (무압축)
+        lhv.setUint32(14, crc, true);
+        lhv.setUint32(18, dataBytes.length, true);
+        lhv.setUint32(22, dataBytes.length, true);
+        lhv.setUint16(26, nameBytes.length, true);
+
+        parts.push(lh, nameBytes, dataBytes);
+
+        // Central Directory Header (46 bytes + name)
+        const cd = new ArrayBuffer(46);
+        const cdv = new DataView(cd);
+        cdv.setUint32(0, 0x02014b50, true);
+        cdv.setUint16(4, 20, true);
+        cdv.setUint16(6, 20, true);
+        cdv.setUint16(8, 0x0800, true);
+        cdv.setUint16(10, 0, true);
+        cdv.setUint32(16, crc, true);
+        cdv.setUint32(20, dataBytes.length, true);
+        cdv.setUint32(24, dataBytes.length, true);
+        cdv.setUint16(28, nameBytes.length, true);
+        cdv.setUint32(42, offset, true);
+
+        cdRecords.push(cd, nameBytes);
+        offset += 30 + nameBytes.length + dataBytes.length;
+
+        if (i % 30 === 0) {
+          updateProgress((i / parsedAssets.length) * 100, '📦 ZIP 파일 생성 중...', `${i + 1} / ${parsedAssets.length} 묶는 중`);
+          await tickUI();
+        }
+      }
+
+      const cdStart = offset;
+      let cdSize = 0;
+      cdRecords.forEach(r => { parts.push(r); cdSize += r.byteLength; });
+
+      const eocd = new ArrayBuffer(22);
+      const ev = new DataView(eocd);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(8, parsedAssets.length, true);
+      ev.setUint16(10, parsedAssets.length, true);
+      ev.setUint32(12, cdSize, true);
+      ev.setUint32(16, cdStart, true);
+      parts.push(eocd);
+
+      const zipBlob = new Blob(parts, { type: 'application/zip' });
+      const url = URL.createObjectURL(zipBlob);
+      downloadSingle(url, `${sourceArchiveName}_cleaned.zip`);
+      updateProgress(100, '✅ ZIP 다운로드 시작됨!', `${sourceArchiveName}_cleaned.zip`);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⬇️ 정제 에셋 일괄 ZIP 저장';
+    }
+  }
+
+  // CRC32 계산기
+  const crcTable = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c;
+    }
+    return t;
+  })();
+  function crc32(bytes) {
+    let crc = 0 ^ (-1);
+    for (let i = 0; i < bytes.length; i++) {
+      crc = (crc >>> 8) ^ crcTable[(crc ^ bytes[i]) & 0xFF];
+    }
+    return (crc ^ (-1)) >>> 0;
+  }
+
+  function exportManifestJson() {
+    const report = parsedAssets.map(a => ({
+      cleanName: a.cleanName,
+      category: a.category,
+      ext: a.ext,
+      width: a.width || undefined,
+      height: a.height || undefined,
+      bgType: a.category === 'images' ? a.bgType : undefined,
+      isSheet: a.category === 'images' ? a.isSheet : undefined,
+      sizeBytes: a.size
+    }));
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    downloadSingle(url, `${sourceArchiveName}_analysis.json`);
+  }
+</script>
+</body>
+</html>
