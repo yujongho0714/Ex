@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>APK & 게임 에셋 분석·정제기 v4</title>
+<title>APK & 앱 로직·에셋 정밀 분석기 v6</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -12,6 +12,8 @@
     --primary: #38bdf8;
     --accent: #a855f7;
     --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
     --text: #f8fafc;
     --muted: #94a3b8;
   }
@@ -39,45 +41,55 @@
   .badge-pro {
     background: linear-gradient(135deg, var(--primary), var(--accent));
     color: #fff;
-    font-size: 0.68rem;
-    padding: 2px 8px;
+    font-size: 0.7rem;
+    padding: 3px 9px;
     border-radius: 999px;
-    font-weight: 700;
+    font-weight: 800;
   }
   .upload-box {
     border: 2px dashed var(--primary);
     background: var(--card);
     border-radius: 14px;
-    padding: 24px 16px;
+    padding: 20px 16px;
     text-align: center;
     margin-bottom: 16px;
-    position: relative;
   }
-  /* 안드로이드 크롬 이벤트 누락 방지를 위해 input을 버튼 위에 직접 배치 */
-  .file-btn-wrap {
-    position: relative;
-    display: inline-block;
-    margin-top: 10px;
-    overflow: hidden;
-    border-radius: 10px;
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    margin-top: 12px;
+  }
+  .btn-main {
     background: var(--primary);
     color: #0f172a;
+    border: none;
     font-weight: 800;
     font-size: 0.95rem;
-    padding: 13px 24px;
+    padding: 14px 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 340px;
     box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
   }
-  .file-btn-wrap input[type="file"] {
-    position: absolute;
-    top: 0;
-    left: 0;
+  .native-input-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 10px;
     width: 100%;
-    height: 100%;
-    opacity: 0.001;
-    cursor: pointer;
-    font-size: 100px;
+    max-width: 340px;
+    font-size: 0.82rem;
+    color: var(--muted);
   }
-  .upload-box p { color: var(--muted); font-size: 0.82rem; margin-top: 10px; }
+  .native-input-box input[type="file"] {
+    width: 100%;
+    margin-top: 6px;
+    color: var(--text);
+    font-size: 0.85rem;
+  }
 
   .btn {
     background: var(--primary);
@@ -96,7 +108,6 @@
   .btn-secondary { background: var(--border); color: var(--text); }
   .btn-success { background: var(--success); color: #052e16; }
 
-  /* 실시간 진행률 및 진단 로그 패널 (항상 표시 가능) */
   .progress-panel {
     background: var(--card);
     border: 1px solid var(--border);
@@ -206,10 +217,10 @@
     background: var(--card);
     border: 1px solid var(--border);
     color: var(--muted);
-    padding: 7px 13px;
+    padding: 8px 14px;
     border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: 0.82rem;
+    font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
   }
@@ -217,6 +228,67 @@
     background: var(--primary);
     color: #0f172a;
     border-color: var(--primary);
+  }
+
+  /* 앱 로직 분석 패널 */
+  .logic-panel {
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .logic-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 15px;
+  }
+  .logic-card h3 {
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .verdict-box {
+    padding: 12px;
+    border-radius: 9px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .verdict-yes { background: rgba(34, 197, 94, 0.15); border: 1px solid var(--success); color: #86efac; }
+  .verdict-no { background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); color: #fcd34d; }
+  .pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .pill {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-family: monospace;
+    color: #e2e8f0;
+  }
+  .pill.highlight {
+    border-color: var(--warning);
+    color: #fde047;
+  }
+  .code-list {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.76rem;
+    max-height: 260px;
+    overflow-y: auto;
+    color: #cbd5e1;
+    line-height: 1.55;
+    word-break: break-all;
   }
 
   .asset-grid {
@@ -307,35 +379,74 @@
     white-space: pre-wrap;
     color: #cbd5e1;
   }
+
+  /* 텍스트 내용 미리보기 모달 */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-box {
+    background: var(--card);
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 650px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 10px;
+  }
+  .modal-content {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.78rem;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    flex: 1;
+    color: #e2e8f0;
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>📦 APK & 게임 에셋 분석·정제기 <span class="badge-pro">v4 모바일직결</span></h1>
+  <h1>📦 APK & 앱 로직·에셋 분석기 <span class="badge-pro">v6 코드·권한해부</span></h1>
   <button class="btn btn-secondary" onclick="resetAll()">초기화</button>
 </header>
 
 <div class="upload-box">
-  <div style="font-size: 1.8rem;">📱 / 🗂️</div>
-  <div class="file-btn-wrap" id="btnWrap">
-    📂 APK / ZIP / 이미지 파일 선택하기
-    <input type="file" id="fileInput" multiple>
+  <div style="font-size: 1.7rem;">📱 / 🔍</div>
+  <div class="btn-group">
+    <button type="button" class="btn-main" onclick="openModernPicker()">🚀 방법 1: 고속 파일 선택기 열기</button>
+    <div class="native-input-box">
+      <div>방법 2: 아래 [파일 선택]을 직접 누르세요</div>
+      <input type="file" id="fileInput" multiple onchange="handleNativeInput(this)">
+    </div>
   </div>
-  <p>버튼을 터치해 APK, XAPK, ZIP 또는 이미지를 선택하면 아래 상태창에 즉시 진행률이 표시됩니다.</p>
 </div>
 
 <!-- 실시간 상태 및 진단 로그 -->
 <div class="progress-panel" id="progressPanel">
   <div class="progress-header">
-    <span id="progressStage">🟢 대기 중 (파일을 선택해 주세요)</span>
+    <span id="progressStage">🟢 대기 중 (APK 또는 파일을 선택해 주세요)</span>
     <span class="progress-percent" id="progressPercent">0%</span>
   </div>
   <div class="progress-track">
     <div class="progress-fill" id="progressFill"></div>
   </div>
   <div class="progress-detail" id="progressCurrentFile">준비 완료</div>
-  <div class="progress-log" id="progressLog"><div>• 시스템 준비 완료 (엔진 v4 로드됨)</div></div>
+  <div class="progress-log" id="progressLog"><div>• v6 앱 로직·권한·에셋 통합 엔진 로드 완료</div></div>
 </div>
 
 <div class="summary-panel" id="summaryPanel">
@@ -345,50 +456,91 @@
       <div class="stat-value" id="statFileName">-</div>
     </div>
     <div class="stat-box">
-      <div class="stat-label">감지된 엔진 / 구조</div>
+      <div class="stat-label">감지된 앱 프레임워크</div>
       <div class="stat-value" id="statEngine">-</div>
     </div>
     <div class="stat-box">
-      <div class="stat-label">추출된 이미지 / 사운드</div>
-      <div class="stat-value" id="statCounts">0 / 0</div>
+      <div class="stat-label">SMS 문자 수신 권한</div>
+      <div class="stat-value" id="statSmsPerm">-</div>
     </div>
     <div class="stat-box">
-      <div class="stat-label">총 리소스 용량</div>
-      <div class="stat-value" id="statSize">0 MB</div>
+      <div class="stat-label">추출된 이미지 / 데이터</div>
+      <div class="stat-value" id="statCounts">0 / 0</div>
     </div>
   </div>
 
   <div class="toolbar">
     <label style="font-size:0.8rem; color:var(--muted);">접두사:</label>
-    <input type="text" id="prefixInput" value="asset" style="width:110px;" oninput="applyCleanNames()">
+    <input type="text" id="prefixInput" value="asset" style="width:100px;" oninput="applyCleanNames()">
     <select id="filterBg" onchange="renderAssets()">
       <option value="all">전체 이미지</option>
       <option value="sheet">스프라이트 시트 의심</option>
       <option value="solid">단색 배경 (#000 / #F0F)</option>
       <option value="alpha">투명 배경 (Alpha)</option>
     </select>
-    <button class="btn btn-success" id="downloadZipBtn" onclick="downloadCleanZip()">⬇️ 정제 에셋 일괄 ZIP 저장</button>
+    <button class="btn btn-success" id="downloadZipBtn" onclick="downloadCleanZip()">⬇️ 일괄 ZIP 저장</button>
     <button class="btn btn-secondary" onclick="exportManifestJson()">📄 분석 JSON</button>
   </div>
 </div>
 
 <div class="tabs" id="tabBar" style="display:none;">
-  <button class="tab active" data-tab="images" onclick="switchTab('images')">🖼️ 이미지 (<span id="cntImg">0</span>)</button>
+  <button class="tab active" data-tab="logic" onclick="switchTab('logic')">🔍 앱 로직·권한·통신 분석</button>
+  <button class="tab" data-tab="images" onclick="switchTab('images')">🖼️ 이미지 (<span id="cntImg">0</span>)</button>
+  <button class="tab" data-tab="data" onclick="switchTab('data')">📜 데이터/JSON (<span id="cntDat">0</span>)</button>
   <button class="tab" data-tab="audio" onclick="switchTab('audio')">🔊 오디오 (<span id="cntAud">0</span>)</button>
-  <button class="tab" data-tab="data" onclick="switchTab('data')">📜 데이터 (<span id="cntDat">0</span>)</button>
-  <button class="tab" data-tab="tree" onclick="switchTab('tree')">📂 폴더 구조 분석</button>
+  <button class="tab" data-tab="tree" onclick="switchTab('tree')">📂 폴더 구조</button>
+</div>
+
+<!-- 앱 로직·권한·통신 정밀 분석 뷰 -->
+<div class="logic-panel" id="logicPanel">
+  <div class="logic-card">
+    <h3>📩 1. 학부모 문자(SMS) 자동 결석 감지 가능 여부</h3>
+    <div id="smsVerdictBox" class="verdict-box verdict-no">분석 대기 중...</div>
+    <div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">감지된 안드로이드 주요 권한 및 하드웨어 기능:</div>
+    <div class="pill-list" id="permPillList"></div>
+  </div>
+
+  <div class="logic-card">
+    <h3>🌐 2. 앱 내부 통신 서버 도메인 & API 경로</h3>
+    <div style="font-size:0.78rem; color:var(--muted); margin-bottom:8px;">실행 코드(classes.dex) 및 설정 파일에서 추출된 실제 서버 주소 및 출결 관련 엔드포인트입니다.</div>
+    <div class="code-list" id="apiUrlList">추출된 URL 없음</div>
+  </div>
+
+  <div class="logic-card">
+    <h3>⚙️ 3. 연동 모듈 & 주요 액티비티(화면) 구조</h3>
+    <div style="font-size:0.78rem; color:var(--muted); margin-bottom:8px;">카카오 알림톡, 푸시 알림, 출결 키패드/QR/NFC 등 탑재된 기능 키워드입니다.</div>
+    <div class="code-list" id="moduleKeywordList">분석 결과 없음</div>
+  </div>
 </div>
 
 <div class="asset-grid" id="assetGrid"></div>
 <div class="structure-tree" id="structureTree"></div>
 
+<!-- 텍스트/JSON 내용 확인 모달 -->
+<div class="modal-bg" id="textModal" onclick="if(event.target===this) this.style.display='none'">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <strong id="modalTitle" style="color:var(--primary); font-size:0.9rem;">파일 내용</strong>
+      <button class="btn btn-secondary" style="padding:4px 10px;" onclick="document.getElementById('textModal').style.display='none'">닫기</button>
+    </div>
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+</div>
+
 <script>
   let parsedAssets = [];
-  let currentTab = 'images';
+  let currentTab = 'logic';
   let sourceArchiveName = 'extracted_assets';
   let isProcessing = false;
 
-  const fileInput = document.getElementById('fileInput');
+  let logicReport = {
+    permissions: [],
+    hasSmsReceive: false,
+    hasSmsRead: false,
+    hasSmsSend: false,
+    urls: [],
+    keywords: []
+  };
 
   function addLog(msg) {
     const logBox = document.getElementById('progressLog');
@@ -397,24 +549,27 @@
     logBox.scrollTop = logBox.scrollHeight;
   }
 
-  // 터치 및 파일 선택 3중 감지기
-  fileInput.addEventListener('click', () => {
-    addLog('파일 선택창 호출됨...');
-  });
-
-  function checkAndStart() {
-    if (isProcessing) return;
-    if (fileInput.files && fileInput.files.length > 0) {
-      addLog(`파일 수신 확인: ${fileInput.files.length}개`);
-      handleFiles(fileInput.files);
+  async function openModernPicker() {
+    addLog('고속 파일 선택기 호출됨');
+    if (window.showOpenFilePicker) {
+      try {
+        const handles = await window.showOpenFilePicker({ multiple: true });
+        const files = [];
+        for (const h of handles) files.push(await h.getFile());
+        if (files.length > 0) handleFiles(files);
+      } catch (e) {
+        document.getElementById('fileInput').click();
+      }
+    } else {
+      document.getElementById('fileInput').click();
     }
   }
 
-  fileInput.addEventListener('change', checkAndStart);
-  fileInput.addEventListener('input', checkAndStart);
-  window.addEventListener('focus', () => {
-    setTimeout(checkAndStart, 300);
-  });
+  function handleNativeInput(el) {
+    if (el.files && el.files.length > 0 && !isProcessing) {
+      handleFiles(el.files);
+    }
+  }
 
   const tickUI = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
 
@@ -431,24 +586,25 @@
     parsedAssets.forEach(a => { if (a.url) URL.revokeObjectURL(a.url); });
     parsedAssets = [];
     isProcessing = false;
+    logicReport = { permissions: [], hasSmsReceive: false, hasSmsRead: false, hasSmsSend: false, urls: [], keywords: [] };
     document.getElementById('progressPercent').textContent = '0%';
     document.getElementById('progressFill').style.width = '0%';
     document.getElementById('progressStage').textContent = '🟢 대기 중';
     document.getElementById('progressCurrentFile').textContent = '준비 완료';
     document.getElementById('summaryPanel').style.display = 'none';
     document.getElementById('tabBar').style.display = 'none';
+    document.getElementById('logicPanel').style.display = 'none';
     document.getElementById('assetGrid').innerHTML = '';
     document.getElementById('structureTree').style.display = 'none';
     if (clearInput) {
-      fileInput.value = '';
+      document.getElementById('fileInput').value = '';
       document.getElementById('progressLog').innerHTML = '<div>• 초기화 완료</div>';
     }
   }
 
-  // 순수 JS 내장 ZIP/APK 중앙 디렉토리 파서
   async function parseZipEntries(file) {
     const size = file.size;
-    if (size < 22) throw new Error('파일 크기가 너무 작아 압축 파일이 아닙니다.');
+    if (size < 22) throw new Error('파일 크기가 너무 작습니다.');
 
     const tailLen = Math.min(size, 65557);
     const tailBuf = await file.slice(size - tailLen, size).arrayBuffer();
@@ -461,17 +617,11 @@
         break;
       }
     }
-    if (eocdOffset === -1) {
-      throw new Error('APK/ZIP 끝 헤더(EOCD)를 찾을 수 없습니다.');
-    }
+    if (eocdOffset === -1) throw new Error('APK/ZIP 끝 헤더(EOCD)를 찾을 수 없습니다.');
 
-    const totalEntries = tailView.getUint16(eocdOffset + 10, true);
     const cdSize = tailView.getUint32(eocdOffset + 12, true);
     const cdOffset = tailView.getUint32(eocdOffset + 16, true);
-
-    if (cdOffset + cdSize > size) {
-      throw new Error('ZIP64 대용량 포맷이거나 헤더 오프셋이 범위를 벗어났습니다.');
-    }
+    if (cdOffset + cdSize > size) throw new Error('ZIP64 포맷이거나 오프셋 오류입니다.');
 
     const cdBuf = await file.slice(cdOffset, cdOffset + cdSize).arrayBuffer();
     const cdView = new DataView(cdBuf);
@@ -492,14 +642,7 @@
       const nameBytes = new Uint8Array(cdBuf, ptr + 46, nameLen);
       const name = decoder.decode(nameBytes);
 
-      entries.push({
-        name,
-        method,
-        compSize,
-        uncompSize,
-        localHeaderOffset,
-        isDir: name.endsWith('/')
-      });
+      entries.push({ name, method, compSize, uncompSize, localHeaderOffset, isDir: name.endsWith('/') });
       ptr += 46 + nameLen + extraLen + commentLen;
     }
     return entries;
@@ -516,9 +659,6 @@
     if (entry.method === 0) {
       return new Blob([compBlob], { type: mimeType });
     } else if (entry.method === 8) {
-      if (typeof DecompressionStream === 'undefined') {
-        throw new Error('이 브라우저는 내장 압축 해제(DecompressionStream)를 지원하지 않습니다.');
-      }
       const ds = new DecompressionStream('deflate-raw');
       const decompressedStream = compBlob.stream().pipeThrough(ds);
       const resp = new Response(decompressedStream);
@@ -526,6 +666,39 @@
       return new Blob([buf], { type: mimeType });
     }
     return null;
+  }
+
+  // 바이너리(AndroidManifest.xml, classes.dex)에서 ASCII/UTF-16 가독 문자열 추출기
+  function extractReadableStrings(uint8Arr) {
+    const asciiStrings = [];
+    let current = '';
+    for (let i = 0; i < uint8Arr.length; i++) {
+      const b = uint8Arr[i];
+      if (b >= 32 && b <= 126) {
+        current += String.fromCharCode(b);
+      } else {
+        if (current.length >= 6) asciiStrings.push(current);
+        current = '';
+      }
+    }
+    if (current.length >= 6) asciiStrings.push(current);
+
+    // AndroidManifest.xml은 UTF-16LE로 저장되므로 UTF-16LE 문자열도 함께 추출
+    const utf16Strings = [];
+    let u16 = '';
+    for (let i = 0; i + 1 < uint8Arr.length; i += 2) {
+      const lo = uint8Arr[i];
+      const hi = uint8Arr[i + 1];
+      if (hi === 0 && lo >= 32 && lo <= 126) {
+        u16 += String.fromCharCode(lo);
+      } else {
+        if (u16.length >= 6) utf16Strings.push(u16);
+        u16 = '';
+      }
+    }
+    if (u16.length >= 6) utf16Strings.push(u16);
+
+    return asciiStrings.concat(utf16Strings);
   }
 
   function getMimeType(ext) {
@@ -547,32 +720,53 @@
     sourceArchiveName = first.name.replace(/\.[^/.]+$/, "");
     const fileSizeMB = (first.size / (1024 * 1024)).toFixed(2);
 
-    updateProgress(5, '1/3 단계: 파일 로드됨', `${first.name} (${fileSizeMB} MB)`, `분석 시작: ${first.name} (${fileSizeMB} MB)`);
+    updateProgress(5, '1/4 단계: 파일 인식 완료', `${first.name} (${fileSizeMB} MB)`, `분석 시작: ${first.name} (${fileSizeMB} MB)`);
     await tickUI();
 
     let totalBytes = 0;
     let allPaths = [];
+    const collectedStrings = new Set();
 
     try {
       const isArchive = files.length === 1 && /\.(apk|xapk|zip|jar)$/i.test(first.name);
 
       if (isArchive) {
-        updateProgress(15, '1/3 단계: APK/ZIP 목차 스캔 중...', '파일 끝단 중앙 디렉토리 읽는 중...', 'ZIP/APK 헤더 분석 중...');
+        updateProgress(12, '1/4 단계: APK 목차 스캔 중...', '중앙 디렉토리 읽는 중...', 'ZIP/APK 목차 스캔 중...');
         await tickUI();
 
         const entries = await parseZipEntries(first);
         allPaths = entries.map(e => e.name);
 
-        updateProgress(25, '2/3 단계: 내부 목록 확인 완료', `총 ${entries.length}개 항목 발견`, `내부 파일 ${entries.length}개 목록 확보 완료`);
+        // 1) AndroidManifest.xml 및 classes.dex 코드 정밀 스캔
+        const codeEntries = entries.filter(e =>
+          !e.isDir && (e.name === 'AndroidManifest.xml' || /^classes\d*\.dex$/i.test(e.name))
+        );
+
+        updateProgress(18, '2/4 단계: 앱 권한(Manifest) 및 실행 코드(DEX) 해부 중...', `코드 파일 ${codeEntries.length}개 스캔 중...`, `실행 코드 및 권한 매니페스트 ${codeEntries.length}개 분석 시작`);
         await tickUI();
 
+        for (let c = 0; c < codeEntries.length; c++) {
+          const ce = codeEntries[c];
+          updateProgress(18 + (c / (codeEntries.length || 1)) * 12, '2/4 단계: 코드 문자열 추출 중...', `스캔 중: ${ce.name}`);
+          await tickUI();
+          try {
+            const blob = await extractEntryBlob(first, ce, 'application/octet-stream');
+            if (blob) {
+              const buf = await blob.arrayBuffer();
+              const strs = extractReadableStrings(new Uint8Array(buf));
+              strs.forEach(s => collectedStrings.add(s));
+            }
+          } catch (e) {}
+        }
+
+        // 2) 미디어/데이터 에셋 추출
         const targetEntries = entries.filter(e => {
           if (e.isDir || e.compSize === 0) return false;
           const ext = e.name.split('.').pop().toLowerCase();
           return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'ogg', 'mp3', 'wav', 'json', 'xml', 'atlas', 'txt'].includes(ext);
         });
 
-        updateProgress(30, '2/3 단계: 리소스 추출 시작', `대상 미디어/데이터: ${targetEntries.length}개`, `추출 가능 리소스 ${targetEntries.length}개 선별됨`);
+        updateProgress(32, '3/4 단계: 리소스 및 설정 파일 추출 중...', `대상 파일: ${targetEntries.length}개`, `미디어/데이터 파일 ${targetEntries.length}개 추출 시작`);
         await tickUI();
 
         const totalTargets = targetEntries.length || 1;
@@ -583,17 +777,13 @@
             const blob = await extractEntryBlob(first, entry, getMimeType(ext));
             if (blob) {
               totalBytes += blob.size;
-              await registerAsset(entry.name, blob, ext);
+              await registerAsset(entry.name, blob, ext, collectedStrings);
             }
           } catch (e) {}
 
-          if (i % 10 === 0 || i === targetEntries.length - 1) {
-            const pct = 30 + ((i + 1) / totalTargets) * 62;
-            updateProgress(
-              pct,
-              `2/3 단계: 에셋 추출 중 (${i + 1} / ${targetEntries.length})`,
-              `처리 중: ${entry.name}`
-            );
+          if (i % 12 === 0 || i === targetEntries.length - 1) {
+            const pct = 32 + ((i + 1) / totalTargets) * 58;
+            updateProgress(pct, `3/4 단계: 에셋 추출 중 (${i + 1} / ${targetEntries.length})`, `처리 중: ${entry.name}`);
             await tickUI();
           }
         }
@@ -603,35 +793,128 @@
           allPaths.push(f.name);
           totalBytes += f.size;
           const ext = f.name.split('.').pop().toLowerCase();
-          await registerAsset(f.name, f, ext);
+          await registerAsset(f.name, f, ext, collectedStrings);
           updateProgress(20 + ((i + 1) / files.length) * 70, `개별 파일 분석 중 (${i + 1}/${files.length})`, f.name);
           await tickUI();
         }
       }
 
-      updateProgress(95, '3/3 단계: 엔진 및 폴더 구조 분석 중...', '앱 메타데이터 정리 중...', '엔진 판별 및 폴더 통계 계산 중...');
+      updateProgress(94, '4/4 단계: 출결 로직·권한·서버 주소 분석 중...', '추출된 문자열 패턴 매칭 중...', '권한 및 통신 API 주소 매칭 완료');
       await tickUI();
 
+      analyzeCodeLogic(collectedStrings);
       analyzePackageMeta(first.name, allPaths, totalBytes);
       applyCleanNames();
 
-      updateProgress(100, '✅ 분석 완료!', `총 ${parsedAssets.length}개 에셋 추출 성공`, `완료! 이미지 ${parsedAssets.filter(a=>a.category==='images').length}개, 오디오 ${parsedAssets.filter(a=>a.category==='audio').length}개`);
+      updateProgress(100, '✅ 정밀 분석 완료!', `에셋 ${parsedAssets.length}개 + 코드/권한 분석 완료`, '모든 분석이 완료되었습니다.');
       document.getElementById('summaryPanel').style.display = 'block';
       document.getElementById('tabBar').style.display = 'flex';
-      renderAssets();
+      renderLogicReport();
+      switchTab('logic');
     } catch (err) {
-      updateProgress(0, '❌ 오류 발생', err.message, `에러 발생: ${err.message}`);
+      updateProgress(0, '❌ 오류 발생', err.message, `에러: ${err.message}`);
     } finally {
       isProcessing = false;
     }
   }
 
-  async function registerAsset(fullPath, blob, ext) {
+  function analyzeCodeLogic(strSet) {
+    const perms = new Set();
+    const urls = new Set();
+    const keywords = new Set();
+
+    const targetKeywords = [
+      'kakao', 'alimtalk', 'fcm', 'firebase', 'bluetooth', 'nfc', 'qrcode', 'barcode',
+      'attendance', 'absent', 'checkin', 'checkout', 'keypad', 'sms', 'mms', 'retrofit', 'okhttp', 'webview'
+    ];
+
+    strSet.forEach(s => {
+      // 안드로이드 권한 추출
+      if (s.includes('android.permission.')) {
+        const m = s.match(/android\.permission\.[A-Z0-9_]+/g);
+        if (m) m.forEach(p => perms.add(p.replace('android.permission.', '')));
+      }
+      // 서버 URL 및 API 엔드포인트 추출
+      if (s.startsWith('http://') || s.startsWith('https://')) {
+        if (!s.includes('schemas.android.com') && !s.includes('www.w3.org') && !s.includes('ns.adobe.com') && !s.includes('purl.org')) {
+          urls.add(s.slice(0, 140));
+        }
+      }
+      // 출결/알림 관련 핵심 클래스·함수·키워드 추출
+      const low = s.toLowerCase();
+      if (s.length >= 8 && s.length <= 90 && !s.includes(' ')) {
+        for (const kw of targetKeywords) {
+          if (low.includes(kw)) {
+            keywords.add(s);
+            break;
+          }
+        }
+      }
+    });
+
+    logicReport.permissions = Array.from(perms).sort();
+    logicReport.hasSmsReceive = logicReport.permissions.includes('RECEIVE_SMS');
+    logicReport.hasSmsRead = logicReport.permissions.includes('READ_SMS');
+    logicReport.hasSmsSend = logicReport.permissions.includes('SEND_SMS');
+    logicReport.urls = Array.from(urls).sort();
+    logicReport.keywords = Array.from(keywords).slice(0, 150);
+  }
+
+  function renderLogicReport() {
+    const verdictBox = document.getElementById('smsVerdictBox');
+    const statSms = document.getElementById('statSmsPerm');
+
+    if (logicReport.hasSmsReceive || logicReport.hasSmsRead) {
+      statSms.textContent = '있음 (감지 가능)';
+      statSms.style.color = '#86efac';
+      verdictBox.className = 'verdict-box verdict-yes';
+      verdictBox.innerHTML = `✅ <strong>문자(SMS) 수신/읽기 권한이 탑재되어 있습니다!</strong><br>
+      이 앱은 휴대폰으로 들어오는 학부모의 문자 메시지를 앱이 직접 감지하여 발신번호나 키워드(결석 등)를 분석해 자동 처리할 수 있는 권한 구조를 가지고 있습니다.`;
+    } else {
+      statSms.textContent = '없음 (직접수신 불가)';
+      statSms.style.color = '#fcd34d';
+      verdictBox.className = 'verdict-box verdict-no';
+      verdictBox.innerHTML = `⚠️ <strong>문자(SMS) 수신/읽기 권한(RECEIVE_SMS / READ_SMS)이 없습니다.</strong><br>
+      따라서 학부모가 관장님 휴대폰 번호로 일반 문자를 보내도 이 앱이 그 문자를 읽어 자동으로 결석 처리할 수는 없습니다.<br>
+      대신 <strong>학부모 전용 앱의 [결석 신청] 버튼</strong>이나 <strong>카카오 알림톡 내 웹 링크</strong>를 통해 학부모가 직접 등록하면 서버 DB를 통해 출결판에 자동 반영되는 구조입니다.`;
+    }
+
+    const permList = document.getElementById('permPillList');
+    if (logicReport.permissions.length === 0) {
+      permList.innerHTML = '<span class="pill">감지된 권한 없음</span>';
+    } else {
+      permList.innerHTML = logicReport.permissions.map(p => {
+        const isSms = p.includes('SMS') || p.includes('MMS');
+        return `<span class="pill ${isSms ? 'highlight' : ''}">${p}</span>`;
+      }).join('');
+    }
+
+    const apiList = document.getElementById('apiUrlList');
+    apiList.innerHTML = logicReport.urls.length
+      ? logicReport.urls.map(u => `<div>🔗 ${u}</div>`).join('')
+      : '<div>추출된 외부 서버 URL이 없습니다.</div>';
+
+    const kwList = document.getElementById('moduleKeywordList');
+    kwList.innerHTML = logicReport.keywords.length
+      ? logicReport.keywords.map(k => `<div>• ${k}</div>`).join('')
+      : '<div>감지된 주요 키워드가 없습니다.</div>';
+  }
+
+  async function registerAsset(fullPath, blob, ext, collectedStrings) {
     const origFileName = fullPath.split('/').pop();
     const url = URL.createObjectURL(blob);
     let category = 'data';
     if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) category = 'images';
     else if (['ogg', 'mp3', 'wav'].includes(ext)) category = 'audio';
+
+    let textContent = null;
+    if (['json', 'txt', 'atlas'].includes(ext)) {
+      try {
+        textContent = await blob.text();
+        const urlMatches = textContent.match(/https?:\/\/[^\s"'<>]+/g);
+        if (urlMatches) urlMatches.forEach(u => collectedStrings.add(u));
+      } catch (e) {}
+    }
 
     const item = {
       fullPath,
@@ -642,6 +925,7 @@
       size: blob.size,
       blob,
       url,
+      textContent,
       width: 0,
       height: 0,
       bgType: 'unknown',
@@ -660,9 +944,7 @@
       img.onload = () => {
         item.width = img.naturalWidth;
         item.height = img.naturalHeight;
-        if (item.width >= item.height * 2 && item.height >= 16) {
-          item.isSheet = true;
-        }
+        if (item.width >= item.height * 2 && item.height >= 16) item.isSheet = true;
         try {
           const canvas = document.createElement('canvas');
           canvas.width = 4;
@@ -685,15 +967,14 @@
 
   function analyzePackageMeta(fileName, paths, totalBytes) {
     document.getElementById('statFileName').textContent = fileName;
-    document.getElementById('statSize').textContent = (totalBytes / (1024 * 1024)).toFixed(2) + ' MB';
 
     const joined = paths.join('\n').toLowerCase();
-    let engine = '일반 / 네이티브 앱';
+    let engine = 'Android 네이티브 앱';
     if (joined.includes('libunity.so') || joined.includes('assets/bin/data')) engine = 'Unity Engine';
-    else if (joined.includes('libcocos')) engine = 'Cocos2d-x / Creator';
-    else if (joined.includes('libue4.so') || joined.includes('libunreal.so')) engine = 'Unreal Engine';
-    else if (joined.includes('assets/www/index.html') || joined.includes('cordova')) engine = 'HTML5 / WebView';
-    else if (joined.includes('libgodot')) engine = 'Godot Engine';
+    else if (joined.includes('libcocos')) engine = 'Cocos2d-x';
+    else if (joined.includes('assets/www/index.html') || joined.includes('cordova')) engine = 'HTML5 / 하이브리드 앱';
+    else if (joined.includes('libflutter.so')) engine = 'Flutter 앱';
+    else if (joined.includes('libreactnativejni.so')) engine = 'React Native 앱';
 
     document.getElementById('statEngine').textContent = engine;
 
@@ -701,7 +982,7 @@
     const audCount = parsedAssets.filter(a => a.category === 'audio').length;
     const datCount = parsedAssets.filter(a => a.category === 'data').length;
 
-    document.getElementById('statCounts').textContent = `${imgCount}개 / ${audCount}개`;
+    document.getElementById('statCounts').textContent = `${imgCount}개 / ${datCount}개`;
     document.getElementById('cntImg').textContent = imgCount;
     document.getElementById('cntAud').textContent = audCount;
     document.getElementById('cntDat').textContent = datCount;
@@ -717,7 +998,7 @@
       .map(([dir, cnt]) => `📁 ${dir.padEnd(32, ' ')} : ${cnt}개`);
     document.getElementById('structureTree').textContent =
       `[전체 내부 경로 수: ${paths.length}개]\n` +
-      `[추정 엔진: ${engine}]\n` +
+      `[프레임워크: ${engine}]\n` +
       `--------------------------------------------\n` +
       treeLines.join('\n');
   }
@@ -741,20 +1022,37 @@
     renderAssets();
   }
 
+  function openTextPreview(idx) {
+    const item = parsedAssets[idx];
+    if (!item) return;
+    document.getElementById('modalTitle').textContent = `${item.origName} (${item.fullPath})`;
+    document.getElementById('modalContent').textContent = item.textContent || '(바이너리 XML 파일이므로 원문 텍스트가 암호화되어 있습니다. 상단 [앱 로직·권한·통신 분석] 탭에서 해독된 문자열을 확인하세요.)';
+    document.getElementById('textModal').style.display = 'flex';
+  }
+
   function renderAssets() {
+    const logicPanel = document.getElementById('logicPanel');
     const grid = document.getElementById('assetGrid');
     const tree = document.getElementById('structureTree');
 
+    logicPanel.style.display = 'none';
+    grid.style.display = 'none';
+    tree.style.display = 'none';
+
+    if (currentTab === 'logic') {
+      logicPanel.style.display = 'flex';
+      return;
+    }
     if (currentTab === 'tree') {
-      grid.style.display = 'none';
       tree.style.display = 'block';
       return;
     }
-    grid.style.display = 'grid';
-    tree.style.display = 'none';
 
+    grid.style.display = 'grid';
     const bgFilter = document.getElementById('filterBg').value;
-    const filtered = parsedAssets.filter(item => {
+
+    const indexedAssets = parsedAssets.map((item, globalIdx) => ({ item, globalIdx }));
+    const filtered = indexedAssets.filter(({ item }) => {
       if (item.category !== currentTab) return false;
       if (currentTab === 'images') {
         if (bgFilter === 'sheet' && !item.isSheet) return false;
@@ -764,9 +1062,11 @@
       return true;
     });
 
-    grid.innerHTML = filtered.slice(0, 300).map(item => {
+    grid.innerHTML = filtered.slice(0, 300).map(({ item, globalIdx }) => {
       const kb = (item.size / 1024).toFixed(1) + ' KB';
       let previewHtml = '';
+      let actionBtn = '';
+
       if (item.category === 'images') {
         const bgBadge = item.isSheet ? '시트추정' : (item.bgType === 'solid' ? '단색배경' : (item.bgType === 'alpha' ? '투명' : '일반'));
         previewHtml = `
@@ -774,18 +1074,21 @@
             <img src="${item.url}" loading="lazy">
             <span class="tag-badge">${bgBadge}</span>
           </div>`;
+        actionBtn = `<button class="btn btn-secondary" style="width:100%; justify-content:center; padding:5px; font-size:0.74rem;" onclick="downloadSingle('${item.url}', '${item.cleanName}')">개별 저장</button>`;
       } else if (item.category === 'audio') {
         previewHtml = `
           <div class="preview-box" style="flex-direction:column; gap:8px;">
             <span style="font-size:1.8rem;">🎵</span>
             <audio controls src="${item.url}" style="width:95%; height:28px;"></audio>
           </div>`;
+        actionBtn = `<button class="btn btn-secondary" style="width:100%; justify-content:center; padding:5px; font-size:0.74rem;" onclick="downloadSingle('${item.url}', '${item.cleanName}')">개별 저장</button>`;
       } else {
         previewHtml = `
-          <div class="preview-box">
+          <div class="preview-box" style="cursor:pointer;" onclick="openTextPreview(${globalIdx})">
             <span style="font-size:2rem;">📄</span>
             <span class="tag-badge">${item.ext.toUpperCase()}</span>
           </div>`;
+        actionBtn = `<button class="btn" style="width:100%; justify-content:center; padding:5px; font-size:0.74rem;" onclick="openTextPreview(${globalIdx})">내용 보기</button>`;
       }
 
       return `
@@ -798,8 +1101,7 @@
               <span>${item.category === 'images' ? `${item.width}×${item.height}` : item.ext.toUpperCase()}</span>
               <span>${kb}</span>
             </div>
-            <button class="btn btn-secondary" style="width:100%; justify-content:center; padding:5px; font-size:0.74rem;"
-              onclick="downloadSingle('${item.url}', '${item.cleanName}')">개별 저장</button>
+            ${actionBtn}
           </div>
         </div>
       `;
@@ -884,11 +1186,11 @@
       const zipBlob = new Blob(parts, { type: 'application/zip' });
       const url = URL.createObjectURL(zipBlob);
       downloadSingle(url, `${sourceArchiveName}_cleaned.zip`);
-      updateProgress(100, '✅ ZIP 다운로드 시작됨!', `${sourceArchiveName}_cleaned.zip`, 'ZIP 생성 및 다운로드 요청 완료');
+      updateProgress(100, '✅ ZIP 다운로드 시작됨!', `${sourceArchiveName}_cleaned.zip`, 'ZIP 생성 완료');
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } finally {
       btn.disabled = false;
-      btn.textContent = '⬇️ 정제 에셋 일괄 ZIP 저장';
+      btn.textContent = '⬇️ 일괄 ZIP 저장';
     }
   }
 
@@ -910,19 +1212,23 @@
   }
 
   function exportManifestJson() {
-    const report = parsedAssets.map(a => ({
-      cleanName: a.cleanName,
-      category: a.category,
-      ext: a.ext,
-      width: a.width || undefined,
-      height: a.height || undefined,
-      bgType: a.category === 'images' ? a.bgType : undefined,
-      isSheet: a.category === 'images' ? a.isSheet : undefined,
-      sizeBytes: a.size
-    }));
+    const report = {
+      appLogic: logicReport,
+      assets: parsedAssets.map(a => ({
+        cleanName: a.cleanName,
+        origName: a.origName,
+        category: a.category,
+        ext: a.ext,
+        width: a.width || undefined,
+        height: a.height || undefined,
+        bgType: a.category === 'images' ? a.bgType : undefined,
+        isSheet: a.category === 'images' ? a.isSheet : undefined,
+        sizeBytes: a.size
+      }))
+    };
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    downloadSingle(url, `${sourceArchiveName}_analysis.json`);
+    downloadSingle(url, `${sourceArchiveName}_full_analysis.json`);
   }
 </script>
 </body>
