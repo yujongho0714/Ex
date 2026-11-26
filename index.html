@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>APK & 게임 에셋 분석·정제기 v3 (오프라인 내장엔진)</title>
+<title>APK & 게임 에셋 분석·정제기 v4</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -12,7 +12,6 @@
     --primary: #38bdf8;
     --accent: #a855f7;
     --success: #22c55e;
-    --danger: #ef4444;
     --text: #f8fafc;
     --muted: #94a3b8;
   }
@@ -52,21 +51,33 @@
     padding: 24px 16px;
     text-align: center;
     margin-bottom: 16px;
+    position: relative;
   }
-  .file-label-btn {
+  /* 안드로이드 크롬 이벤트 누락 방지를 위해 input을 버튼 위에 직접 배치 */
+  .file-btn-wrap {
+    position: relative;
     display: inline-block;
+    margin-top: 10px;
+    overflow: hidden;
+    border-radius: 10px;
     background: var(--primary);
     color: #0f172a;
     font-weight: 800;
     font-size: 0.95rem;
-    padding: 12px 22px;
-    border-radius: 10px;
-    cursor: pointer;
-    margin-top: 10px;
+    padding: 13px 24px;
     box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
   }
-  .file-label-btn:active { transform: scale(0.98); }
-  .upload-box p { color: var(--muted); font-size: 0.82rem; margin-top: 8px; }
+  .file-btn-wrap input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.001;
+    cursor: pointer;
+    font-size: 100px;
+  }
+  .upload-box p { color: var(--muted); font-size: 0.82rem; margin-top: 10px; }
 
   .btn {
     background: var(--primary);
@@ -85,13 +96,12 @@
   .btn-secondary { background: var(--border); color: var(--text); }
   .btn-success { background: var(--success); color: #052e16; }
 
-  /* 실시간 진행률 패널 */
+  /* 실시간 진행률 및 진단 로그 패널 (항상 표시 가능) */
   .progress-panel {
-    display: none;
     background: var(--card);
-    border: 1px solid var(--primary);
+    border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 16px;
+    padding: 14px;
     margin-bottom: 16px;
   }
   .progress-header {
@@ -100,16 +110,16 @@
     align-items: center;
     margin-bottom: 8px;
     font-weight: 700;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
   }
   .progress-percent {
     color: var(--primary);
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-variant-numeric: tabular-nums;
   }
   .progress-track {
     width: 100%;
-    height: 12px;
+    height: 10px;
     background: var(--bg);
     border-radius: 999px;
     overflow: hidden;
@@ -136,15 +146,14 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 8px 10px;
-    font-size: 0.74rem;
+    font-size: 0.73rem;
     font-family: monospace;
-    color: #cbd5e1;
-    max-height: 100px;
+    color: #38bdf8;
+    max-height: 110px;
     overflow-y: auto;
     line-height: 1.45;
   }
 
-  /* 요약 대시보드 */
   .summary-panel {
     display: none;
     background: var(--card);
@@ -303,28 +312,30 @@
 <body>
 
 <header>
-  <h1>📦 APK & 게임 에셋 분석·정제기 <span class="badge-pro">오프라인 내장엔진</span></h1>
+  <h1>📦 APK & 게임 에셋 분석·정제기 <span class="badge-pro">v4 모바일직결</span></h1>
   <button class="btn btn-secondary" onclick="resetAll()">초기화</button>
 </header>
 
 <div class="upload-box">
   <div style="font-size: 1.8rem;">📱 / 🗂️</div>
-  <label for="fileInput" class="file-label-btn">📂 APK / ZIP / 이미지 파일 선택하기</label>
-  <input type="file" id="fileInput" multiple style="display:none;">
-  <p>인터넷 연결 없이 기기 내부에서 즉시 APK 압축을 해부하고 리소스를 추출합니다.</p>
+  <div class="file-btn-wrap" id="btnWrap">
+    📂 APK / ZIP / 이미지 파일 선택하기
+    <input type="file" id="fileInput" multiple>
+  </div>
+  <p>버튼을 터치해 APK, XAPK, ZIP 또는 이미지를 선택하면 아래 상태창에 즉시 진행률이 표시됩니다.</p>
 </div>
 
-<!-- 실시간 진행 상태 패널 -->
+<!-- 실시간 상태 및 진단 로그 -->
 <div class="progress-panel" id="progressPanel">
   <div class="progress-header">
-    <span id="progressStage">⏳ 준비 중...</span>
+    <span id="progressStage">🟢 대기 중 (파일을 선택해 주세요)</span>
     <span class="progress-percent" id="progressPercent">0%</span>
   </div>
   <div class="progress-track">
     <div class="progress-fill" id="progressFill"></div>
   </div>
-  <div class="progress-detail" id="progressCurrentFile">대기 중...</div>
-  <div class="progress-log" id="progressLog"></div>
+  <div class="progress-detail" id="progressCurrentFile">준비 완료</div>
+  <div class="progress-log" id="progressLog"><div>• 시스템 준비 완료 (엔진 v4 로드됨)</div></div>
 </div>
 
 <div class="summary-panel" id="summaryPanel">
@@ -375,46 +386,70 @@
   let parsedAssets = [];
   let currentTab = 'images';
   let sourceArchiveName = 'extracted_assets';
+  let isProcessing = false;
 
   const fileInput = document.getElementById('fileInput');
-  fileInput.addEventListener('change', function(e) {
-    if (this.files && this.files.length > 0) {
-      handleFiles(this.files);
+
+  function addLog(msg) {
+    const logBox = document.getElementById('progressLog');
+    const time = new Date().toTimeString().split(' ')[0];
+    logBox.innerHTML += `<div>[${time}] ${msg}</div>`;
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  // 터치 및 파일 선택 3중 감지기
+  fileInput.addEventListener('click', () => {
+    addLog('파일 선택창 호출됨...');
+  });
+
+  function checkAndStart() {
+    if (isProcessing) return;
+    if (fileInput.files && fileInput.files.length > 0) {
+      addLog(`파일 수신 확인: ${fileInput.files.length}개`);
+      handleFiles(fileInput.files);
     }
+  }
+
+  fileInput.addEventListener('change', checkAndStart);
+  fileInput.addEventListener('input', checkAndStart);
+  window.addEventListener('focus', () => {
+    setTimeout(checkAndStart, 300);
   });
 
   const tickUI = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
 
   function updateProgress(percent, stageText, detailText, logLine = null) {
     const p = Math.min(100, Math.max(0, Math.round(percent)));
-    document.getElementById('progressPanel').style.display = 'block';
     document.getElementById('progressPercent').textContent = `${p}%`;
     document.getElementById('progressFill').style.width = `${p}%`;
     if (stageText) document.getElementById('progressStage').textContent = stageText;
     if (detailText) document.getElementById('progressCurrentFile').textContent = detailText;
-    if (logLine) {
-      const logBox = document.getElementById('progressLog');
-      logBox.innerHTML += `<div>• ${logLine}</div>`;
-      logBox.scrollTop = logBox.scrollHeight;
-    }
+    if (logLine) addLog(logLine);
   }
 
-  function resetAll() {
+  function resetAll(clearInput = true) {
     parsedAssets.forEach(a => { if (a.url) URL.revokeObjectURL(a.url); });
     parsedAssets = [];
-    document.getElementById('progressPanel').style.display = 'none';
-    document.getElementById('progressLog').innerHTML = '';
+    isProcessing = false;
+    document.getElementById('progressPercent').textContent = '0%';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressStage').textContent = '🟢 대기 중';
+    document.getElementById('progressCurrentFile').textContent = '준비 완료';
     document.getElementById('summaryPanel').style.display = 'none';
     document.getElementById('tabBar').style.display = 'none';
     document.getElementById('assetGrid').innerHTML = '';
     document.getElementById('structureTree').style.display = 'none';
-    fileInput.value = '';
+    if (clearInput) {
+      fileInput.value = '';
+      document.getElementById('progressLog').innerHTML = '<div>• 초기화 완료</div>';
+    }
   }
 
-  // 순수 JS 내장 ZIP/APK 중앙 디렉토리 파서 (외부 라이브러리 불필요)
+  // 순수 JS 내장 ZIP/APK 중앙 디렉토리 파서
   async function parseZipEntries(file) {
     const size = file.size;
-    // 파일 끝에서 최대 65KB 읽어 EOCD(End of Central Directory) 찾기
+    if (size < 22) throw new Error('파일 크기가 너무 작아 압축 파일이 아닙니다.');
+
     const tailLen = Math.min(size, 65557);
     const tailBuf = await file.slice(size - tailLen, size).arrayBuffer();
     const tailView = new DataView(tailBuf);
@@ -427,12 +462,16 @@
       }
     }
     if (eocdOffset === -1) {
-      throw new Error('올바른 APK 또는 ZIP 압축 구조가 아닙니다.');
+      throw new Error('APK/ZIP 끝 헤더(EOCD)를 찾을 수 없습니다.');
     }
 
     const totalEntries = tailView.getUint16(eocdOffset + 10, true);
     const cdSize = tailView.getUint32(eocdOffset + 12, true);
     const cdOffset = tailView.getUint32(eocdOffset + 16, true);
+
+    if (cdOffset + cdSize > size) {
+      throw new Error('ZIP64 대용량 포맷이거나 헤더 오프셋이 범위를 벗어났습니다.');
+    }
 
     const cdBuf = await file.slice(cdOffset, cdOffset + cdSize).arrayBuffer();
     const cdView = new DataView(cdBuf);
@@ -440,7 +479,7 @@
 
     const entries = [];
     let ptr = 0;
-    while (ptr < cdSize && entries.length < totalEntries) {
+    while (ptr + 46 <= cdSize) {
       if (cdView.getUint32(ptr, true) !== 0x02014b50) break;
       const method = cdView.getUint16(ptr + 10, true);
       const compSize = cdView.getUint32(ptr + 20, true);
@@ -466,7 +505,6 @@
     return entries;
   }
 
-  // 개별 엔트리 압축 해제 (STORE=0, DEFLATE=8 지원)
   async function extractEntryBlob(file, entry, mimeType) {
     const headerBuf = await file.slice(entry.localHeaderOffset, entry.localHeaderOffset + 30).arrayBuffer();
     const hView = new DataView(headerBuf);
@@ -479,16 +517,15 @@
       return new Blob([compBlob], { type: mimeType });
     } else if (entry.method === 8) {
       if (typeof DecompressionStream === 'undefined') {
-        throw new Error('이 브라우저는 내장 압축 해제를 지원하지 않습니다. 최신 크롬을 사용해 주세요.');
+        throw new Error('이 브라우저는 내장 압축 해제(DecompressionStream)를 지원하지 않습니다.');
       }
       const ds = new DecompressionStream('deflate-raw');
       const decompressedStream = compBlob.stream().pipeThrough(ds);
       const resp = new Response(decompressedStream);
       const buf = await resp.arrayBuffer();
       return new Blob([buf], { type: mimeType });
-    } else {
-      return null;
     }
+    return null;
   }
 
   function getMimeType(ext) {
@@ -502,13 +539,15 @@
   }
 
   async function handleFiles(fileList) {
-    resetAll();
+    resetAll(false);
+    isProcessing = true;
+
     const files = Array.from(fileList);
     const first = files[0];
     sourceArchiveName = first.name.replace(/\.[^/.]+$/, "");
-    const fileSizeMB = (first.size / (1024 * 1024)).toFixed(1);
+    const fileSizeMB = (first.size / (1024 * 1024)).toFixed(2);
 
-    updateProgress(5, '1/3 단계: 파일 인식 완료', `${first.name} (${fileSizeMB} MB)`, `선택된 파일: ${first.name} (${fileSizeMB} MB)`);
+    updateProgress(5, '1/3 단계: 파일 로드됨', `${first.name} (${fileSizeMB} MB)`, `분석 시작: ${first.name} (${fileSizeMB} MB)`);
     await tickUI();
 
     let totalBytes = 0;
@@ -518,13 +557,13 @@
       const isArchive = files.length === 1 && /\.(apk|xapk|zip|jar)$/i.test(first.name);
 
       if (isArchive) {
-        updateProgress(15, '1/3 단계: APK/ZIP 목차(Central Directory) 스캔 중...', '전체 파일을 메모리에 올리지 않고 목차만 고속 스캔 중...', '내장 ZIP 파서로 목차 스캔 시작...');
+        updateProgress(15, '1/3 단계: APK/ZIP 목차 스캔 중...', '파일 끝단 중앙 디렉토리 읽는 중...', 'ZIP/APK 헤더 분석 중...');
         await tickUI();
 
         const entries = await parseZipEntries(first);
         allPaths = entries.map(e => e.name);
 
-        updateProgress(25, '2/3 단계: 리소스 선별 완료', `전체 ${entries.length}개 항목 중 미디어/데이터 필터링`, `총 ${entries.length}개 내부 경로 확인 완료`);
+        updateProgress(25, '2/3 단계: 내부 목록 확인 완료', `총 ${entries.length}개 항목 발견`, `내부 파일 ${entries.length}개 목록 확보 완료`);
         await tickUI();
 
         const targetEntries = entries.filter(e => {
@@ -533,7 +572,7 @@
           return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'ogg', 'mp3', 'wav', 'json', 'xml', 'atlas', 'txt'].includes(ext);
         });
 
-        updateProgress(30, '2/3 단계: 에셋 추출 및 해상도 분석 시작...', `추출 대상: ${targetEntries.length}개 파일`, `미디어/데이터 파일 ${targetEntries.length}개 선별됨`);
+        updateProgress(30, '2/3 단계: 리소스 추출 시작', `대상 미디어/데이터: ${targetEntries.length}개`, `추출 가능 리소스 ${targetEntries.length}개 선별됨`);
         await tickUI();
 
         const totalTargets = targetEntries.length || 1;
@@ -546,16 +585,14 @@
               totalBytes += blob.size;
               await registerAsset(entry.name, blob, ext);
             }
-          } catch (e) {
-            // 손상되거나 암호화된 개별 엔트리는 건너뜀
-          }
+          } catch (e) {}
 
           if (i % 10 === 0 || i === targetEntries.length - 1) {
             const pct = 30 + ((i + 1) / totalTargets) * 62;
             updateProgress(
               pct,
               `2/3 단계: 에셋 추출 중 (${i + 1} / ${targetEntries.length})`,
-              `추출 중: ${entry.name}`
+              `처리 중: ${entry.name}`
             );
             await tickUI();
           }
@@ -572,18 +609,20 @@
         }
       }
 
-      updateProgress(95, '3/3 단계: 엔진 및 폴더 구조 분석 중...', '앱 메타데이터 정리 중...', '폴더 구조 및 게임 엔진 판별 완료');
+      updateProgress(95, '3/3 단계: 엔진 및 폴더 구조 분석 중...', '앱 메타데이터 정리 중...', '엔진 판별 및 폴더 통계 계산 중...');
       await tickUI();
 
       analyzePackageMeta(first.name, allPaths, totalBytes);
       applyCleanNames();
 
-      updateProgress(100, '✅ 분석 완료!', `총 ${parsedAssets.length}개 에셋 추출 성공`, `완료: 이미지 ${parsedAssets.filter(a=>a.category==='images').length}개, 오디오 ${parsedAssets.filter(a=>a.category==='audio').length}개`);
+      updateProgress(100, '✅ 분석 완료!', `총 ${parsedAssets.length}개 에셋 추출 성공`, `완료! 이미지 ${parsedAssets.filter(a=>a.category==='images').length}개, 오디오 ${parsedAssets.filter(a=>a.category==='audio').length}개`);
       document.getElementById('summaryPanel').style.display = 'block';
       document.getElementById('tabBar').style.display = 'flex';
       renderAssets();
     } catch (err) {
-      updateProgress(0, '❌ 오류 발생', err.message, `에러: ${err.message}`);
+      updateProgress(0, '❌ 오류 발생', err.message, `에러 발생: ${err.message}`);
+    } finally {
+      isProcessing = false;
     }
   }
 
@@ -774,7 +813,6 @@
     a.click();
   }
 
-  // 외부 라이브러리 없이 STORE 방식 무압축 ZIP 직접 생성 (초고속·오프라인 100% 호환)
   async function downloadCleanZip() {
     if (!parsedAssets.length) return;
     const btn = document.getElementById('downloadZipBtn');
@@ -795,13 +833,12 @@
         const dataBytes = new Uint8Array(dataBuf);
         const crc = crc32(dataBytes);
 
-        // Local File Header (30 bytes + name)
         const lh = new ArrayBuffer(30);
         const lhv = new DataView(lh);
         lhv.setUint32(0, 0x04034b50, true);
         lhv.setUint16(4, 20, true);
-        lhv.setUint16(6, 0x0800, true); // UTF-8
-        lhv.setUint16(8, 0, true);      // STORE (무압축)
+        lhv.setUint16(6, 0x0800, true);
+        lhv.setUint16(8, 0, true);
         lhv.setUint32(14, crc, true);
         lhv.setUint32(18, dataBytes.length, true);
         lhv.setUint32(22, dataBytes.length, true);
@@ -809,7 +846,6 @@
 
         parts.push(lh, nameBytes, dataBytes);
 
-        // Central Directory Header (46 bytes + name)
         const cd = new ArrayBuffer(46);
         const cdv = new DataView(cd);
         cdv.setUint32(0, 0x02014b50, true);
@@ -848,7 +884,7 @@
       const zipBlob = new Blob(parts, { type: 'application/zip' });
       const url = URL.createObjectURL(zipBlob);
       downloadSingle(url, `${sourceArchiveName}_cleaned.zip`);
-      updateProgress(100, '✅ ZIP 다운로드 시작됨!', `${sourceArchiveName}_cleaned.zip`);
+      updateProgress(100, '✅ ZIP 다운로드 시작됨!', `${sourceArchiveName}_cleaned.zip`, 'ZIP 생성 및 다운로드 요청 완료');
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } finally {
       btn.disabled = false;
@@ -856,7 +892,6 @@
     }
   }
 
-  // CRC32 계산기
   const crcTable = (() => {
     const t = new Uint32Array(256);
     for (let i = 0; i < 256; i++) {
